@@ -1,5 +1,6 @@
 node_modules
 dist
+app.js
 
 # Editor directories and files
 .vscode/*
