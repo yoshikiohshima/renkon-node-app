@@ -1,5 +1,7 @@
+import { AnyNsRecord } from "node:dns";
 import * as http from "node:http";
 import * as urlParser from "node:url";
+import * as renkon from "renkon-node";
 
 type Timestamp = number // js epoch
 
@@ -33,7 +35,7 @@ class EventServer {
         if (pathname.startsWith("/")) {
             pathname = pathname.slice(1);
         }
-        console.log("urlObject", pathname);
+        // console.log("urlObject", pathname);
     
         if (method === 'POST') {
             return this.post(request, response, pathname);
@@ -68,10 +70,9 @@ class Session {
     renkon: any;
 
     async loadRenkon() {
-        const mod = await import("renkon-node");
-        const {renkonify, getFunctions} = mod;
-        const funcs = getFunctions();
-        this.renkon = renkonify(funcs[0], {emit: (path:string, evt:any) => this.receive(path, evt)});
+        const {renkonify} = (renkon as any);
+        const funcs = await this.getFunctions();
+        this.renkon = await renkonify(funcs[0], {emit: (path:string, evt:any) => this.receive(path, evt)});
     }
 
     constructor(start:Timestamp) {
@@ -94,7 +95,6 @@ class Session {
         const track = this.ensureTrackSegment(path);
         track.add(evt);
         this.renkon.registerEvent(path, evt);
-        console.log(path, evt);
     }
 
     newTrackSegment(path:Path) {
@@ -113,6 +113,32 @@ class Session {
         let array = this.trackSegments.get(path);
         if (array) {return array[array.length - 1]}
         return this.newTrackSegment(path);
+    }
+
+    getFunctions(optFileNames?:Array<string>) {
+        let fileNames = optFileNames;
+        if (!fileNames) {
+            const index = process.argv.lastIndexOf("--");
+            if (index >= 0) {
+                fileNames = process.argv.slice(index + 1);
+            } else {
+                fileNames = [];
+            }
+        }
+
+        return Promise.all(fileNames.map((f) => eval(`import("${f}")`))).then((modules) => {
+            const funcs:Array<Function> = [];
+ 
+            modules.forEach((module) => {
+                const keys: Array<string> = Object.keys(module);
+                for (const key of keys) {
+                    if (typeof module[key] === "function") {
+                        funcs.push(module[key]);
+                    }
+                }
+            });
+            return funcs;
+        });
     }
 }
 

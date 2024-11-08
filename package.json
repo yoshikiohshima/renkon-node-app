@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build": "tsc app.ts",
-    "start": "npm run build; node app.js"
+    "build": "tsc app.ts; mv -f app.js app.cjs",
+    "start": "npm run build; node app.cjs -- main.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
@@ -11,6 +11,7 @@
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
-    "renkon-node": "file:../renkon-node"
-  }
+    "renkon-node": "0.1.8"
+  },
+  "type": "module"
 }
