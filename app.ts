@@ -19,7 +19,7 @@ function randomString() {
     return Math.floor(Math.random() * 36 ** 10).toString(36);
 }
 
-class EventServer {
+export class EventServer {
     server?: http.Server;
     session: Session;
 
@@ -82,7 +82,7 @@ class EventServer {
     }    
 }
 
-class EventEmitter {
+export class EventEmitter {
     server?: ws.WebSocketServer;
     session: Session;
     interval: ReturnType<typeof setInterval> | undefined;
@@ -143,7 +143,7 @@ class EventEmitter {
     }
 }
 
-class Session {
+export class Session {
     id:SessionID;
     start: Timestamp;
     trackSegments: Map<Path, [TrackSegment]> // (sorted by start time)
@@ -159,10 +159,13 @@ class Session {
         this.trackSegments = new Map();
     }
 
-    async loadRenkon() {
+    async loadRenkon(optFunc?:Function) {
         const {renkonify} = renkon;
-        const funcs = await this.getFunctions();
-        this.renkon = await renkonify(funcs[0], {
+        let func = optFunc;
+        if (!func) {
+            func = (await this.getFunctions())[0];
+        }
+        this.renkon = await renkonify(func, {
             receive: (path:string, evt:any) => this.receive(path, evt),
             emit: (path:string, evt:any) => this.emit(path, evt)
         })        
@@ -242,7 +245,7 @@ class Session {
     }
 }
 
-class TrackSegment {
+export class TrackSegment {
     start: Timestamp;
     path: Path; // the semantic of it is to be determined, but it should be stable
     events: Array<any>;
@@ -260,14 +263,16 @@ class TrackSegment {
     }
 }
 
-const session = new Session(Date.now());
-session.createServer();
-session.loadRenkon();
+export function main(optFunc) {
+    const session = new Session(Date.now());
+    session.createServer();
+    session.loadRenkon(optFunc);
 
-dns.lookup(os.hostname(), (err:any, addr:string, _fam:any) => {
-    console.log(`Running at http://${addr === undefined ? "localhost" : addr}${((port === 80) ? '' : ':')}${port}/`);
-});
-
+    dns.lookup(os.hostname(), (err:any, addr:string, _fam:any) => {
+        console.log(`Running at http://${addr === undefined ? "localhost" : addr}${((port === 80) ? '' : ':')}${port}/`);
+    });
+    return session;
+}
 
 /*
   session is a set of track segments.

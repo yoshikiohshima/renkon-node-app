@@ -1,7 +1,20 @@
 {
+  "name": "renkon-app",
+  "version": "0.1.9",
+  "type": "module",
+  "license": "MIT",
+  "main":  "app.js",
+  "files": [
+    "app.js",
+    "package.json",
+    "package-lock.json",
+    "README.md"
+  ],
+    
   "scripts": {
     "build": "tsc -noCheck --target esnext app.ts",
-    "start": "npm run build; node app.js -- main.js"
+    "start": "npm run build; node app.js -- main.js",
+    "prepublish": "npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
@@ -14,6 +27,5 @@
   "dependencies": {
     "renkon-node": "file:../renkon-node",
     "ws": "^8.18.0"
-  },
-  "type": "module"
+  }
 }
